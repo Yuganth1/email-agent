@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus — AI Outreach Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0a0a0f;
+    --surface:  #111118;
+    --surface2: #1a1a24;
+    --border:   #2a2a38;
+    --accent:   #7c6af7;
+    --accent2:  #4fd1c5;
+    --accent3:  #f6ad55;
+    --text:     #e8e8f0;
+    --muted:    #6b6b80;
+    --success:  #68d391;
+    --mono:     'Space Mono', monospace;
+    --sans:     'DM Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 24px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    backdrop-filter: blur(8px);
+  }
+
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .logo-text span {
+    color: var(--accent);
+  }
+
+  .badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.08em;
+    opacity: 0.7;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 0;
+    height: calc(100vh - 73px);
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .panel-left {
+    border-right: 1px solid var(--border);
+    padding: 32px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+  }
+
+  input[type="text"], textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+  }
+
+  input[type="text"]:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  textarea { min-height: 80px; }
+
+  .file-zone {
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .file-zone:hover, .file-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(124, 106, 247, 0.06);
+  }
+
+  .file-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  .file-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .file-zone .hint {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .file-name {
+    font-size: 12px;
+    color: var(--accent2);
+    font-family: var(--mono);
+    margin-top: 6px;
+  }
+
+  .btn-run {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-run:hover { background: #6b59e8; transform: translateY(-1px); }
+  .btn-run:active { transform: translateY(0); }
+  .btn-run:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-run .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+  }
+
+  .btn-run.loading .spinner { display: block; }
+  .btn-run.loading .btn-label { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RIGHT PANEL ── */
+  .panel-right {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    overflow: hidden;
+  }
+
+  .agent-log {
+    overflow-y: auto;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    opacity: 0.35;
+  }
+
+  .empty-state .big-icon {
+    font-size: 48px;
+    filter: grayscale(1);
+  }
+
+  .empty-state p {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  /* Log entries */
+  .log-entry {
+    display: flex;
+    gap: 12px;
+    animation: slideIn 0.25s ease-out both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .log-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .log-icon.thinking { background: rgba(124,106,247,0.15); }
+  .log-icon.tool     { background: rgba(79,209,197,0.15); }
+  .log-icon.result   { background: rgba(246,173,85,0.12); }
+  .log-icon.done     { background: rgba(104,211,145,0.15); }
+
+  .log-content { flex: 1; min-width: 0; }
+
+  .log-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .log-tag.thinking { color: var(--accent); }
+  .log-tag.tool     { color: var(--accent2); }
+  .log-tag.result   { color: var(--accent3); }
+  .log-tag.done     { color: var(--success); }
+
+  .log-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .log-text.mono {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+  }
+
+  .tool-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(79,209,197,0.1);
+    border: 1px solid rgba(79,209,197,0.25);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    margin-bottom: 6px;
+  }
+
+  /* Email output */
+  .email-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .email-header {
+    background: var(--surface2);
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    gap: 4px;
+  }
+
+  .email-field {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .email-field .ef-label {
+    font-family: var(--mono);
+    color: var(--muted);
+    min-width: 52px;
+    font-size: 10px;
+    padding-top: 1px;
+  }
+
+  .email-field .ef-val {
+    color: var(--text);
+  }
+
+  .email-subject {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .tone-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tone-badge.formal  { background: rgba(124,106,247,0.15); color: var(--accent); }
+  .tone-badge.warm    { background: rgba(246,173,85,0.15);  color: var(--accent3); }
+  .tone-badge.direct  { background: rgba(79,209,197,0.15);  color: var(--accent2); }
+
+  .email-body {
+    padding: 18px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Status bar */
+  .status-bar {
+    padding: 10px 32px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+  }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .status-dot.active {
+    background: var(--accent2);
+    box-shadow: 0 0 6px var(--accent2);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .status-dot.done { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .status-dot.error { background: #fc8181; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .status-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .copy-btn {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: none;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: none;
+  }
+
+  .copy-btn:hover { background: rgba(124,106,247,0.1); }
+  .copy-btn.visible { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">N</div>
+  <span class="logo-text">NEX<span>US</span></span>
+  <span class="badge">AI OUTREACH AGENT v1.0</span>
+</header>
+
+<main>
+  <!-- LEFT: Input panel -->
+  <div class="panel-left">
+    <div>
+      <div class="panel-title">// Target</div>
+      <label for="target">Person or company name</label>
+      <input type="text" id="target" placeholder="e.g. John Smith at Acme Corp" />
+    </div>
+
+    <div>
+      <label for="goal">Outreach goal</label>
+      <textarea id="goal" placeholder="e.g. Pitch our SaaS product for auto repair shop management. They run a dealership in Toronto."></textarea>
+    </div>
+
+    <div>
+      <div class="panel-title">// Context document (optional)</div>
+      <div class="file-zone" id="fileZone">
+        <input type="file" id="fileInput" accept=".txt,.pdf,.md,.csv" />
+        <span class="file-icon">📄</span>
+        <div class="hint">Drop a file or click to upload</div>
+        <div class="hint" style="margin-top:2px">TXT · MD · CSV · PDF</div>
+        <div class="file-name" id="fileName"></div>
+      </div>
+    </div>
+
+    <button class="btn-run" id="runBtn" onclick="runAgent()">
+      <div class="spinner"></div>
+      <span class="btn-label">▶ RUN AGENT</span>
+    </button>
+
+    <div style="font-size:11px; color:var(--muted); line-height:1.6; font-family:var(--mono);">
+      The agent will: search the web → read your doc → draft a personalized email. Watch it think in real time.
+    </div>
+  </div>
+
+  <!-- RIGHT: Agent log -->
+  <div class="panel-right">
+    <div class="agent-log" id="agentLog">
+      <div class="empty-state" id="emptyState">
+        <span class="big-icon">🤖</span>
+        <p>AGENT IDLE<br>AWAITING INSTRUCTIONS</p>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">Ready</span>
+      <button class="copy-btn" id="copyBtn" onclick="copyEmail()">COPY EMAIL</button>
+    </div>
+  </div>
+</main>
+
+<script>
+  let uploadedFile = null;
+  let finalEmailData = null;
+
+  // File upload
+  const fileInput = document.getElementById('fileInput');
+  const fileZone = document.getElementById('fileZone');
+  const fileName = document.getElementById('fileName');
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) {
+      uploadedFile = fileInput.files[0];
+      fileName.textContent = '✓ ' + uploadedFile.name;
+    }
+  });
+
+  fileZone.addEventListener('dragover', e => { e.preventDefault(); fileZone.classList.add('dragover'); });
+  fileZone.addEventListener('dragleave', () => fileZone.classList.remove('dragover'));
+  fileZone.addEventListener('drop', e => {
+    e.preventDefault();
+    fileZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) {
+      uploadedFile = e.dataTransfer.files[0];
+      fileName.textContent = '✓ ' + uploadedFile.name;
+    }
+  });
+
+  function setStatus(state, text) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot ' + state;
+    document.getElementById('statusText').textContent = text;
+  }
+
+  function addLogEntry(type, tag, icon, content, isMono = false) {
+    const emptyState = document.getElementById('emptyState');
+    if (emptyState) emptyState.remove();
+
+    const log = document.getElementById('agentLog');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `
+      <div class="log-icon ${type}">${icon}</div>
+      <div class="log-content">
+        <div class="log-tag ${type}">${tag}</div>
+        <div class="log-text ${isMono ? 'mono' : ''}">${escHtml(content)}</div>
+      </div>`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+    return entry;
+  }
+
+  function addToolEntry(toolName, inputObj) {
+    const emptyState = document.getElementById('emptyState');
+    if (emptyState) emptyState.remove();
+
+    const log = document.getElementById('agentLog');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+
+    const inputStr = Object.entries(inputObj)
+      .map(([k, v]) => `${k}: ${String(v).slice(0,120)}`)
+      .join('\n');
+
+    entry.innerHTML = `
+      <div class="log-icon tool">⚙</div>
+      <div class="log-content">
+        <div class="log-tag tool">Tool call</div>
+        <div class="tool-pill">⚡ ${escHtml(toolName)}</div>
+        <div class="log-text mono">${escHtml(inputStr)}</div>
+      </div>`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function addEmailCard(emailData) {
+    const log = document.getElementById('agentLog');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+
+    const toneClass = emailData.tone || 'formal';
+    entry.innerHTML = `
+      <div class="log-icon done">✉</div>
+      <div class="log-content" style="width:100%">
+        <div class="log-tag done">Email drafted</div>
+        <div class="email-card">
+          <div class="email-header">
+            <div class="email-field">
+              <span class="ef-label">TO</span>
+              <span class="ef-val">${escHtml(emailData.to_name)}${emailData.to_email !== '—' ? ' &lt;' + escHtml(emailData.to_email) + '&gt;' : ''}</span>
+            </div>
+            <div class="email-field">
+              <span class="ef-label">SUBJECT</span>
+              <span class="ef-val email-subject">${escHtml(emailData.subject)}</span>
+            </div>
+            <div class="email-field">
+              <span class="ef-label">TONE</span>
+              <span class="tone-badge ${toneClass}">${escHtml(emailData.tone)}</span>
+            </div>
+          </div>
+          <div class="email-body">${escHtml(emailData.body)}</div>
+        </div>
+      </div>`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+    finalEmailData = emailData;
+    document.getElementById('copyBtn').classList.add('visible');
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function copyEmail() {
+    if (!finalEmailData) return;
+    const text = `To: ${finalEmailData.to_name} ${finalEmailData.to_email !== '—' ? '<' + finalEmailData.to_email + '>' : ''}\nSubject: ${finalEmailData.subject}\n\n${finalEmailData.body}`;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'COPIED ✓';
+      setTimeout(() => btn.textContent = 'COPY EMAIL', 2000);
+    });
+  }
+
+  async function runAgent() {
+    const target = document.getElementById('target').value.trim();
+    const goal = document.getElementById('goal').value.trim();
+
+    if (!target || !goal) {
+      alert('Please enter a target and goal.');
+      return;
+    }
+
+    // Reset UI
+    finalEmailData = null;
+    const log = document.getElementById('agentLog');
+    log.innerHTML = '';
+    document.getElementById('copyBtn').classList.remove('visible');
+
+    const btn = document.getElementById('runBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+    setStatus('active', 'Agent running...');
+
+    const formData = new FormData();
+    formData.append('target', target);
+    formData.append('goal', goal);
+    if (uploadedFile) formData.append('document', uploadedFile);
+
+    try {
+      const resp = await fetch('/run-agent', { method: 'POST', body: formData });
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const msg = JSON.parse(line.slice(6));
+
+            if (msg.type === 'status') {
+              setStatus('active', msg.text);
+
+            } else if (msg.type === 'thinking') {
+              addLogEntry('thinking', 'Thinking', '💭', msg.text);
+              setStatus('active', 'Agent reasoning...');
+
+            } else if (msg.type === 'tool_call') {
+              addToolEntry(msg.tool, msg.input);
+              setStatus('active', `Calling ${msg.tool}...`);
+
+            } else if (msg.type === 'tool_result') {
+              addLogEntry('result', msg.tool + ' result', '📦', msg.result, true);
+              setStatus('active', 'Processing result...');
+
+            } else if (msg.type === 'email') {
+              addEmailCard(msg.data);
+              setStatus('done', 'Email ready');
+
+            } else if (msg.type === 'done') {
+              setStatus('done', 'Agent completed');
+            }
+          } catch(e) {}
+        }
+      }
+    } catch(err) {
+      addLogEntry('result', 'Error', '❌', String(err));
+      setStatus('error', 'Agent error');
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  // Enter key on inputs
+  document.getElementById('goal').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.metaKey) runAgent();
+  });
+</script>
+</body>
+</html>
